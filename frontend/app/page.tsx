@@ -2,105 +2,131 @@
 
 import { useEffect, useState } from "react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-export default function Home() {
+type StatusShape = {
+  status: string;
+  identity?: string;
+  mode?: string;
+  current_focus?: string;
+  last_user_intent?: string;
+  last_reply?: string;
+  recent_actions?: Array<{ ts: number; intent: string; actions: string[] }>;
+};
+
+export default function Page() {
   const [intent, setIntent] = useState("");
-  const [status, setStatus] = useState<any>(null);
-  const [reply, setReply] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [reply, setReply] = useState("");
+  const [status, setStatus] = useState<StatusShape | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
-  async function refreshStatus() {
+  async function loadStatus() {
     try {
-      const r = await fetch(`${API}/status`);
-      const j = await r.json();
-      setStatus(j);
-    } catch (e) {
-      setStatus({ error: "Could not reach Zerenthis backend." });
-    }
-  }
-
-  async function sendIntent() {
-    if (!intent.trim()) return;
-    setLoading(true);
-    setReply(null);
-    try {
-      const r = await fetch(`${API}/execute`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ intent })
-      });
-      const j = await r.json();
-      setReply(j);
-      setIntent("");
-      await refreshStatus();
-    } catch (e) {
-      setReply({ error: "Failed to send message to Zerenthis." });
-    } finally {
-      setLoading(false);
+      const res = await fetch(`${API}/status`, { cache: "no-store" });
+      const data = await res.json();
+      setStatus(data);
+    } catch {
+      setError("Could not reach Jarvis backend.");
     }
   }
 
   useEffect(() => {
-    refreshStatus();
-    const t = setInterval(refreshStatus, 5000);
-    return () => clearInterval(t);
+    loadStatus();
   }, []);
 
-  return (
-    <main style={{ maxWidth: 960, margin: "0 auto", padding: 24 }}>
-      <h1 style={{ fontSize: 36, marginBottom: 8 }}>Zerenthis</h1>
-      <p style={{ opacity: 0.8, marginTop: 0 }}>Austin&apos;s personal Jarvis interface</p>
+  async function sendIntent() {
+    if (!intent.trim()) return;
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`${API}/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intent })
+      });
+      const data = await res.json();
+      setReply(data.reply || "");
+      setIntent("");
+      await loadStatus();
+    } catch {
+      setError("Execution failed. Backend connection may be offline.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 20 }}>
-        <section style={{ background: "#111", border: "1px solid #222", borderRadius: 16, padding: 20 }}>
-          <h2>Talk to Zerenthis</h2>
+  return (
+    <main style={{ maxWidth: 980, margin: "0 auto", padding: 24 }}>
+      <h1 style={{ fontSize: 36, marginBottom: 8 }}>Zerenthis Jarvis</h1>
+      <p style={{ opacity: 0.8, marginTop: 0 }}>
+        Persistent operator companion shell
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 20 }}>
+        <section style={{ background: "#121933", borderRadius: 16, padding: 20 }}>
+          <h2>Talk to Jarvis</h2>
           <textarea
             value={intent}
             onChange={(e) => setIntent(e.target.value)}
-            placeholder="Tell Zerenthis what you want..."
+            placeholder="Tell Zerenthis what to do..."
             style={{
               width: "100%",
               minHeight: 140,
-              background: "#0d0d0d",
-              color: "#fff",
-              border: "1px solid #333",
-              borderRadius: 12,
               padding: 14,
-              resize: "vertical"
+              borderRadius: 12,
+              border: "1px solid #2d3a6b",
+              background: "#0d1430",
+              color: "#e8ecf3"
             }}
           />
           <button
             onClick={sendIntent}
-            disabled={loading}
+            disabled={busy}
             style={{
               marginTop: 12,
-              background: "#fff",
-              color: "#000",
-              border: 0,
-              borderRadius: 10,
               padding: "12px 18px",
-              cursor: "pointer",
-              fontWeight: 700
+              borderRadius: 12,
+              border: "none",
+              cursor: "pointer"
             }}
           >
-            {loading ? "Sending..." : "Send to Zerenthis"}
+            {busy ? "Sending..." : "Execute"}
           </button>
 
           <div style={{ marginTop: 20 }}>
-            <h3>Latest reply</h3>
-            <pre style={{ whiteSpace: "pre-wrap", background: "#0d0d0d", padding: 14, borderRadius: 12, border: "1px solid #222" }}>
-              {reply ? JSON.stringify(reply, null, 2) : "No message sent yet."}
-            </pre>
+            <h3>Reply</h3>
+            <div style={{ background: "#0d1430", borderRadius: 12, padding: 14, minHeight: 80 }}>
+              {reply || "Jarvis is waiting."}
+            </div>
           </div>
+
+          {error ? <p style={{ color: "#ff8080" }}>{error}</p> : null}
         </section>
 
-        <section style={{ background: "#111", border: "1px solid #222", borderRadius: 16, padding: 20 }}>
-          <h2>Live Status</h2>
-          <pre style={{ whiteSpace: "pre-wrap", background: "#0d0d0d", padding: 14, borderRadius: 12, border: "1px solid #222" }}>
-            {status ? JSON.stringify(status, null, 2) : "Loading..."}
-          </pre>
-        </section>
+        <aside style={{ background: "#121933", borderRadius: 16, padding: 20 }}>
+          <h2>Status</h2>
+          <p><strong>Backend:</strong> {status?.status || "unknown"}</p>
+          <p><strong>Identity:</strong> {status?.identity || "Zerenthis"}</p>
+          <p><strong>Mode:</strong> {status?.mode || "jarvis_companion"}</p>
+          <p><strong>Focus:</strong> {status?.current_focus || "none"}</p>
+          <p><strong>Last Intent:</strong> {status?.last_user_intent || "none"}</p>
+          <p><strong>Last Reply:</strong> {status?.last_reply || "none"}</p>
+
+          <h3>Recent Actions</h3>
+          <div style={{ background: "#0d1430", borderRadius: 12, padding: 12 }}>
+            {(status?.recent_actions || []).length === 0 ? (
+              <p>No actions yet.</p>
+            ) : (
+              (status?.recent_actions || []).map((item, idx) => (
+                <div key={idx} style={{ marginBottom: 12 }}>
+                  <div><strong>Intent:</strong> {item.intent || "(empty)"}</div>
+                  <div><strong>Actions:</strong> {(item.actions || []).join(", ")}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </aside>
       </div>
     </main>
   );
