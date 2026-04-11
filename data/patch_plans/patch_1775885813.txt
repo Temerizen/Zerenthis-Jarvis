@@ -1,0 +1,31 @@
+PATCH PLAN (SMART)
+
+Intent:
+patch plan for adding conversation timeline to frontend
+
+Target File:
+frontend/app/page.tsx
+
+Why This File:
+Frontend UI changes are most likely handled in page.tsx.
+
+Proposed Change:
+Add a conversation timeline or history panel to the frontend UI.
+
+Implementation Strategy:
+- Make the smallest possible targeted edit
+- Preserve existing interfaces where possible
+- Keep the change readable and reversible
+- Do not auto-apply without approval
+
+Risk Level:
+LOW
+
+Verification Steps:
+- Restart backend if backend code changed
+- Refresh frontend
+- Trigger the related Jarvis action
+- Confirm the expected behavior changed without regressions
+
+Status:
+PLANNED ONLY

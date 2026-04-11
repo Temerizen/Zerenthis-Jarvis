@@ -1,0 +1,10 @@
+[
+  {
+    "ts": 1775885837,
+    "plan_path": "C:\\ZerenthisCore\\data\\patch_plans\\patch_1775885813.txt",
+    "target_file": "C:\\ZerenthisCore\\frontend\\app\\page.tsx",
+    "backup_file": "C:\\ZerenthisCore\\data\\backups\\page.tsx.1775885837.bak",
+    "intent": "patch plan for adding conversation timeline to frontend",
+    "proposed_change": "Add a conversation timeline or history panel to the frontend UI."
+  }
+]

@@ -1,0 +1,14 @@
+PATCH PLAN
+
+Intent:
+patch plan for improving frontend
+
+Strategy:
+- Identify the most likely target file
+- Make a minimal safe change
+- Keep system stable
+- Do not auto-apply
+- Preserve reversibility
+
+Status:
+PLANNED ONLY
