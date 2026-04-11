@@ -1,4 +1,4 @@
-﻿export const metadata = {
+export const metadata = {
   title: "Zerenthis",
   description: "Austin's personal Jarvis"
 };
